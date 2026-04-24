@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns='http://www.w3.org/2005/Atom' xmlns:apps='http://schemas.google.com/apps/2006'>
+	<title>Mail Filters</title>
+	<id>tag:mail.google.com,2008:filters:0000000000</id>
+	<updated>2026-04-24T24:06:02Z</updated>
+	<author>
+		<name>Your Name</name>
+		<email>you@example.com</email>
+	</author>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:0000000000</id>
+		<updated>2026-04-24T24:06:02Z</updated>
+		<content></content>
+		<apps:property name='hasTheWord' value='&quot;thank you for your interest&quot; OR &quot;thank you for applying&quot; OR &quot;application&quot; OR &quot;hiring&quot; OR &quot;position&quot; OR &quot;unfortunately&quot; OR &quot;decided not to move forward&quot; OR &quot;moved forward with other&quot; OR &quot;keep your resume on file&quot; OR &quot;we received your application&quot; OR &quot;successful in your job search&quot;'/>
+		<apps:property name='label' value='Job Rejection Shield'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+</feed>
