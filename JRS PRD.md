@@ -91,7 +91,8 @@ A (Дата)	B (Компания/Тема)	C (Текст отказа)	D (Зап
 Date	Company/Subject	Reject Text	Ghost Reply Sent	Detailed Feedback	Thread ID
 
 DB
-https://docs.google.com/spreadsheets/d/REDACTED_SPREADSHEET_ID/edit?gid=0#gid=0
+ID таблицы хранится в Script Property `SPREADSHEET_ID` в самом проекте Apps Script.
+В репозиторий он не коммитится: репозиторий публичный, а в таблице персональные данные из переписок.
 
 
 

@@ -4,7 +4,7 @@
 ## 😫 The Pain: Why This Exists
 Job hunting is a numbers game, but the emotional toll is real. Reading the same "Unfortunately, we decided to move forward..." message 10 times a day kills motivation. 
 
-**Job Rejection Shield** acts as your personal buffer. It uses **Gemini 3.1 AI** to read your mail, extract company data, log it into a Google Sheet, and ask for feedback—all before you even open the email.
+**Job Rejection Shield** acts as your personal buffer. It uses **Gemini** to read your mail, extract company data and log it into a Google Sheet — all before you even open the email. The script walks a priority list of Gemini models and falls back to the next one if a model is unavailable or rate-limited.
 
 ---
 
@@ -43,45 +43,75 @@ You need a "net" to catch rejections and move them to the script.
 
 ## 💻 Step 4: Install the Script
 1. In your Google Sheet, go to **Extensions > Apps Script**.
-2. Delete everything in the editor and paste the `Code.gs` from this project.
-3. Paste your **Spreadsheet ID** into the variable at the top.
-4. **Add your API Key securely:**
-   - Click the **Project Settings (gear icon)** on the left sidebar.
-   - Scroll to **Script Properties**.
-   - Click **Add script property**.
-   - **Property:** `GEMINI_API_KEY` | **Value:** *[Your API Key]*
+2. Create three script files and paste the contents from this project:
+   - `Config.gs` — credentials, feature flags, model list
+   - `Code.gs` — the orchestrator
+   - `GhostReply.gs` — the optional feedback loop
+   > *Prefer the terminal? Skip this and jump to [Development with clasp](#-development-with-clasp) — one `clasp push` uploads all three.*
+3. **Add your secrets.** Nothing is hardcoded — the script reads both values from Script Properties:
+   - Click the **Project Settings (gear icon)** in the left sidebar.
+   - Scroll to **Script Properties** and add:
+
+     | Property | Value |
+     | --- | --- |
+     | `SPREADSHEET_ID` | *the ID you copied in Step 1* |
+     | `GEMINI_API_KEY` | *your API key from Step 2* |
+     | `MODEL_NAME` | *optional — overrides the first model in the priority list* |
    - Click **Save**.
-5. Click the **Editor (code icon)** and hit **Save**.
+4. Click the **Editor (code icon)** and hit **Save**.
+
+---
+
+## ⚙️ Step 5: Check the Behaviour Flags
+All of these live at the top of `Config.gs`.
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `ENABLE_GHOST_REPLY` | `false` | Auto-replies to a rejection asking for feedback. Off by default: in practice most rejections arrive from `noreply@` addresses, so there is nobody to answer. |
+| `ENABLE_FEEDBACK_HARVEST` | `false` | Scans recruiter answers to those requests and writes them into the sheet. Separate flag on purpose — switch it on alone to collect replies to requests you sent earlier. |
+| `NOREPLY_PATTERNS` | `noreply`, `do-not-reply` | Sender addresses that can never receive a reply. Add your own patterns here. |
+
+**Rejections are always logged**, whatever the flags say — the CRM is the point, the reply is optional. Column **G (Ghost Sent)** records what happened:
+
+| Value | Meaning |
+| --- | --- |
+| `1` | Feedback request was sent |
+| `DISABLED` | `ENABLE_GHOST_REPLY` is off |
+| `NO_REPLY_ADDRESS` | Sender cannot receive replies |
+| `N/A` | Row is not a rejection (e.g. `APPLIED`) |
 
 ---
 
 ## 🧪 Testing the Flow (Manual Stress Test)
 
-Follow these steps to ensure everything is connected:
+Follow these steps to ensure everything is connected.
 
-### Phase 1: The Initial Rejection
+### Phase 1: The Rejection
 1. Send an email to yourself from another account.
    - **Subject:** `Update on your application for the Iron Throne`
-   - **Body:** 
-   Dear John Snow, Regarding your application for the Iron Throne.
-   Unfortunately, we decided to move forward with other candidates.
-   Best, Tyrion Lannister
-2. In Gmail, you should see the email fall into the  `Job Rejection Shield` label.
-3. If not, try manually adding this email to the label.
-4. In Apps Script, click **Run** on the `main` function.
-5. **Result:** - Check your Sheet: "Stark Industries" should appear with the status "REJECTED".
-   - Check your test account: You should have received an automated reply asking for feedback.
-
-### Phase 2: The Feedback Catch
-1. Reply to the automated message from your test account.
    - **Body:**
-   Hi John,
-   Usually we don't provide feedback, but in your case Agon Targaryen, we must admit: you were simply too good for us.
-   Good luck finding a place that actually deserves you!
-   Beyond the wall, brother.  Beyond the wall 😁
-   Yours, Brandon Stark
-2. Run the `main` function again.
-3. **Result:** Check the **Detailed Feedback** column in your Sheet. The "Vibranium" comment should be logged there automatically, and the email moved to Trash.
+     ```
+     Dear John Snow,
+     Regarding your application for the Iron Throne at Casterly Rock Inc.
+     Unfortunately, we decided to move forward with other candidates.
+     Best, Tyrion Lannister
+     ```
+2. In Gmail, the email should land under the `Job Rejection Shield` label. If not, add the label manually.
+3. In Apps Script, click **Run** on the `main` function.
+4. **Result:**
+   - Your Sheet gets a row: **Company** `Casterly Rock Inc.`, **Sender Name** `Tyrion Lannister`, **Status** `REJECTED`, **Ghost Sent** `DISABLED`.
+   - Your **Sent** folder stays empty — no auto-reply goes out while `ENABLE_GHOST_REPLY` is `false`.
+   - The thread is in the Trash. You never saw it.
+
+### Phase 2: The Noreply Sender
+1. Repeat Phase 1, but send from an address containing `noreply` (or temporarily add your test address to `NOREPLY_PATTERNS`).
+2. Run `main` again.
+3. **Result:** the row is logged exactly as above, but **Ghost Sent** reads `NO_REPLY_ADDRESS` — the shield knows there was nobody to write back to.
+
+### Phase 3: The Win
+1. Send yourself an interview invitation (“Could you do a call on Thursday?”) and label it `Job Rejection Shield`.
+2. Run `main`.
+3. **Result:** the email is pushed **back to your Inbox**, the label is removed, and nothing is written to the Sheet. Good news always reaches you.
 
 ---
 
@@ -93,15 +123,46 @@ To make it run 24/7 without you:
 
 ---
 
+## 🧑‍💻 Development with clasp
+Editing code in the browser gets old fast. [clasp](https://github.com/google/clasp) syncs this repo with the live script.
+
+```bash
+# 1. Install (Node 20+)
+npm install -g @google/clasp
+
+# 2. Enable the Apps Script API once per account:
+#    https://script.google.com/home/usersettings  ->  On
+
+# 3. Log in with the account that owns the script
+clasp login
+
+# 4. Point the repo at your script
+cp .clasp.json.example .clasp.json
+clasp list-scripts          # find your Script ID, or copy it from Project Settings
+#    paste it into .clasp.json
+
+# 5. Sync
+clasp pull                  # bring the live script down
+clasp push                  # deploy your changes (a bound script picks them up immediately)
+clasp create-version "..."  # snapshot the current state so you can roll back
+```
+
+Notes:
+- `.clasp.json` holds your Script ID and is **gitignored** — commit `.clasp.json.example` instead.
+- `.claspignore` whitelists `*.gs` and `appsscript.json`, so the README and other repo files never get uploaded to Apps Script.
+- Files upload in the order set by `filePushOrder`: `Config.gs` first.
+
+---
+
 ## 👋 About the Author
 Hi, I'm **Sergei Smalkov**, a Product Manager who believes that even "No's" can be automated for growth. I built this tool to turn the negativity of job rejections into a clean, structured database of feedback.
 
 This project is **Open Source** and open for improvements. If you have ideas (Notion integration, Telegram alerts?), feel free to contribute!
 
 ### Liked the Idea?
-* ⭐ **[Star this repository](https://github.com/ssmalkov/job-rejection-shield)** — to help others find it.
-* 🚀 **[Check my other projects](https://linktr.ee/your_linktree)** — I build tools for productivity and PMs.
-* 🍺 **[Buy me a beer / Tip](https://linktr.ee/your_linktree)** — keep the updates coming!
+* ⭐ **[Star this repository](https://github.com/ssmalkov/JobShield)** — to help others find it.
+* 🚀 **[Check my other projects](https://linktr.ee/ssmalkov)** — I build tools for productivity and PMs.
+* 🍺 **[Buy me a beer / Tip](https://linktr.ee/ssmalkov)** — keep the updates coming!
 
 ---
 **Safe hunting! May your next status be `OFFER`.**
