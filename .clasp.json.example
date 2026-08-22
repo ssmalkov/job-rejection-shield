@@ -1,0 +1,6 @@
+{
+  "scriptId": "PASTE_YOUR_SCRIPT_ID_HERE",
+  "rootDir": ".",
+  "scriptExtensions": [".gs", ".js"],
+  "filePushOrder": ["Config.gs", "Code.gs", "GhostReply.gs"]
+}

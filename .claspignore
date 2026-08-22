@@ -1,0 +1,5 @@
+# clasp pushes everything under rootDir by default.
+# Whitelist approach: ignore all, then re-include only what Apps Script needs.
+**/**
+!appsscript.json
+!*.gs
