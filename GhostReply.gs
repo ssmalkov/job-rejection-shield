@@ -27,7 +27,7 @@ function processIncomingFeedback() {
   const threads = GmailApp.search('"[ref-id:" -from:' + myEmail);
   if (threads.length === 0) return;
 
-  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
+  const sheet = getCrmSheet();
   const data = sheet.getDataRange().getValues();
 
   threads.forEach(thread => {

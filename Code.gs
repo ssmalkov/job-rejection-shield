@@ -230,7 +230,7 @@ function callAiWithRetry(subject, body) {
  * is a summary, not the original.
  */
 function logToSheet(date, company, name, email, status, content, threadId, ghostStatus, rawBody) {
-  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
+  const sheet = getCrmSheet();
   const raw = String(rawBody || "").substring(0, RAW_BODY_LIMIT);
   sheet.appendRow([
     date,
@@ -244,6 +244,38 @@ function logToSheet(date, company, name, email, status, content, threadId, ghost
     threadId,
     sanitizeCell(raw)
   ]);
+}
+
+/**
+ * Opens the CRM sheet and makes sure its header row is in place.
+ */
+function getCrmSheet() {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
+  ensureHeader(sheet);
+  return sheet;
+}
+
+/**
+ * Fills in header cells that are still empty. Idempotent and non-destructive:
+ * a column you renamed yourself stays as it is, only blanks get written.
+ */
+function ensureHeader(sheet) {
+  const width = SHEET_HEADER.length;
+  const range = sheet.getRange(1, 1, 1, width);
+  const current = range.getValues()[0];
+  let changed = false;
+
+  for (let i = 0; i < width; i++) {
+    if (current[i] === '' || current[i] === null) {
+      current[i] = SHEET_HEADER[i];
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    range.setValues([current]);
+    console.log("--- LOG: HEADER ROW COMPLETED");
+  }
 }
 
 function releaseToInbox(thread, label) {

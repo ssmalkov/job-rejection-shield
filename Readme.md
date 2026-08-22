@@ -10,8 +10,9 @@ Job hunting is a numbers game, but the emotional toll is real. Reading the same 
 
 ## 🛠️ Step 1: Prepare the CRM (Google Sheets)
 1. Create a **new Google Sheet**.
-2. Set the header row (A1 to J1) with these exact columns:
+2. Leave the header row alone — on its first run the script fills in any missing header cell itself:
    `Date | Company | Sender Name | Sender Email | Status | Reject Text | Ghost Sent | Detailed Feedback | Thread ID | Raw Body`
+   > *Renamed a column to your own wording? It stays — `ensureHeader()` only writes cells that are empty.*
 3. Copy the **Spreadsheet ID** from the address bar. 
    > *Example: If the URL is `docs.google.com/spreadsheets/d/1ABC_123/edit`, the ID is `1ABC_123`.*
 

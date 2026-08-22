@@ -35,6 +35,8 @@ A recruitment intelligence agent built on Google Apps Script and Gemini AI. It a
 ## Data Schema (10 Columns)
 1. Date | 2. Company | 3. Sender Name | 4. Sender Email | 5. Status | 6. Reject Text | 7. Ghost Sent | 8. Detailed Feedback | 9. Thread ID | 10. Raw Body
 
+`ensureHeader()` writes any missing header cell on every run, so a fresh spreadsheet needs no manual setup and an existing 9-column sheet gains column J by itself; cells you renamed are left alone.
+
 Column J (Raw Body) holds the original email text, up to `RAW_BODY_LIMIT` (5000) characters. After a permanent delete it is the only surviving copy — column F is the model's cleaned-up summary, and the body is truncated to 2000 characters before it is ever sent to the model.
 
 **Ghost Sent** values: `1` (request sent), `DISABLED` (flag off), `NO_REPLY_ADDRESS` (sender cannot receive replies), `N/A` (not a rejection).

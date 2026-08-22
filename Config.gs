@@ -62,6 +62,14 @@ const GHOST_STATUS = {
 };
 
 // === SHEET ===
+// Canonical header row. ensureHeader() writes any cell that is still empty, so
+// a fresh spreadsheet needs no manual setup and an older 9-column sheet simply
+// gains column J. Headers you renamed yourself are never overwritten.
+const SHEET_HEADER = [
+  'Date', 'Company', 'Sender Name', 'Sender Email', 'Status',
+  'Reject Text', 'Ghost Sent', 'Detailed Feedback', 'Thread ID', 'Raw Body'
+];
+
 // How much of the raw email body is preserved in column J. The thread itself is
 // gone after a permanent delete, so this is the only copy of the original text.
 const RAW_BODY_LIMIT = 5000;
