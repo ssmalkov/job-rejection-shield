@@ -1,33 +1,19 @@
 /**
  * PROJECT: Job Rejection Shield v4.0
+ * FILE: Code.gs
  * GOAL: Advanced Recruitment Intelligence with JSON Data Extraction
+ *
+ * Configuration and feature flags live in Config.gs.
+ * The optional feedback loop lives in GhostReply.gs.
  */
-
-// === CONFIGURATION ===
-const scriptProperties = PropertiesService.getScriptProperties();
-const SPREADSHEET_ID = scriptProperties.getProperty('SPREADSHEET_ID');
-const API_KEY = scriptProperties.getProperty('GEMINI_API_KEY');
-const TARGET_LABEL = 'Job Rejection Shield';
-
-// Priority list of models to try if the primary fails
-const MODEL_PRIORITY = [
-//  scriptProperties.getProperty('MODEL_NAME') || 'gemini-2.0-flash-lite',
-    scriptProperties.getProperty('MODEL_NAME') ||
-  'gemini-2.5-flash-lite',
-  'gemini-2.5-flash',
-  'gemini-flash-lite-latest',
-  'gemini-flash-latest',
-  'gemini-pro-latest',
-  'gemini-3.1-flash-lite-preview',
-  'gemini-3.1-pro-preview',
-  'gemini-3-flash-preview'
-];
 
 function main() {
   console.log("--- LOG: STARTING WORKFLOW ---");
-  
-  processIncomingFeedback();
-  
+
+  if (ENABLE_FEEDBACK_HARVEST) {
+    processIncomingFeedback();
+  }
+
   const label = GmailApp.getUserLabelByName(TARGET_LABEL);
   if (!label) return;
 
@@ -58,14 +44,19 @@ function main() {
       // CRITICAL: Only move/delete if AI actually replied with valid JSON
       if (analysis && analysis.status && analysis.status !== "ERROR") {
         if (analysis.status === "REJECT") {
-          logToSheet(new Date(), analysis.company, analysis.senderName, sender, "REJECTED", analysis.cleanedBody, threadId);
-          sendGhostReply(thread, body);
-          thread.moveToTrash(); 
-          console.log("--- LOG: REJECTED AND TRASHED: " + analysis.company);
-        } 
+          // Rejections are always logged, even when we stay silent: the CRM is
+          // the whole point, the reply is optional.
+          const ghostStatus = resolveGhostStatus(sender);
+          logToSheet(new Date(), analysis.company, analysis.senderName, sender, "REJECTED", analysis.cleanedBody, threadId, ghostStatus);
+          if (ghostStatus === GHOST_STATUS.SENT) {
+            sendGhostReply(thread, body);
+          }
+          thread.moveToTrash();
+          console.log("--- LOG: REJECTED AND TRASHED: " + analysis.company + " (ghost: " + ghostStatus + ")");
+        }
         else if (analysis.status === "APPLIED") {
-          logToSheet(new Date(), analysis.company, analysis.senderName, sender, "APPLIED", "Application Confirmed", threadId);
-          thread.removeLabel(label); 
+          logToSheet(new Date(), analysis.company, analysis.senderName, sender, "APPLIED", "Application Confirmed", threadId, GHOST_STATUS.NOT_APPLICABLE);
+          thread.removeLabel(label);
           console.log("--- LOG: APPLIED AND ARCHIVED: " + analysis.company);
         }
         else {
@@ -78,6 +69,29 @@ function main() {
       console.error("--- LOG: THREAD ERROR: " + e.toString());
     }
   });
+}
+
+/**
+ * Decides what to do with the feedback request for a given sender,
+ * and what to record in column G.
+ * The noreply check comes first so the reason stays visible in the sheet
+ * even while the feature flag is off.
+ */
+function resolveGhostStatus(sender) {
+  if (isNoReplySender(sender)) return GHOST_STATUS.NO_REPLY_ADDRESS;
+  if (!ENABLE_GHOST_REPLY) return GHOST_STATUS.DISABLED;
+  return GHOST_STATUS.SENT;
+}
+
+/**
+ * True for addresses that cannot receive a reply (noreply@, do-not-reply@, ...).
+ * Accepts both "Name <a@b.com>" and a bare address.
+ */
+function isNoReplySender(sender) {
+  const match = String(sender).match(/<([^>]+)>/);
+  const address = (match ? match[1] : String(sender)).trim().toLowerCase();
+  const localPart = address.split('@')[0];
+  return NOREPLY_PATTERNS.some(pattern => pattern.test(localPart));
 }
 
 /**
@@ -147,45 +161,13 @@ function callAiWithRetry(subject, body) {
   return null;
 }
 
-function processIncomingFeedback() {
-  const myEmail = Session.getActiveUser().getEmail();
-  const threads = GmailApp.search('"[ref-id:" -from:' + myEmail);
-  if (threads.length === 0) return;
-
+/**
+ * Appends a row to the CRM sheet.
+ * A:Date B:Company C:Name D:Email E:Status F:Text G:GhostSent H:Feedback I:ThreadID
+ */
+function logToSheet(date, company, name, email, status, content, threadId, ghostStatus) {
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
-  const data = sheet.getDataRange().getValues();
-
-  threads.forEach(thread => {
-    const lastMessage = thread.getMessages().pop();
-    const body = lastMessage.getPlainBody();
-    const threadId = thread.getId();
-    
-    // Simple prompt for feedback extraction
-    const feedback = callAiWithRetry("Extract Feedback", body);
-    
-    // Since we reuse callAiWithRetry, handle feedback carefully
-    if (feedback) {
-      const text = feedback.cleanedBody || (typeof feedback === 'string' ? feedback : JSON.stringify(feedback));
-      for (let i = 1; i < data.length; i++) {
-        if (data[i][8] === threadId) {
-          sheet.getRange(i + 1, 8).setValue(text);
-          thread.moveToTrash();
-          break;
-        }
-      }
-    }
-  });
-}
-
-function logToSheet(date, company, name, email, status, content, threadId) {
-  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
-  sheet.appendRow([date, company, name, email, status, content, 1, "", threadId]);
-}
-
-function sendGhostReply(thread, originalBody) {
-  const replyHeader = "Thank you for the update. Could you please share brief feedback regarding the decision? It would help me a lot in my professional growth.\n\n[ref-id:" + thread.getId() + "]\n\n";
-  const fullBody = replyHeader + "--- Original Message ---\n" + originalBody;
-  thread.reply(fullBody);
+  sheet.appendRow([date, company, name, email, status, content, ghostStatus, "", threadId]);
 }
 
 function releaseToInbox(thread, label) {
