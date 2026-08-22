@@ -11,7 +11,7 @@ Job hunting is a numbers game, but the emotional toll is real. Reading the same 
 ## 🛠️ Step 1: Prepare the CRM (Google Sheets)
 1. Create a **new Google Sheet**.
 2. Leave the header row alone — on its first run the script fills in any missing header cell itself:
-   `Date | Company | Sender Name | Sender Email | Status | Reject Text | Ghost Sent | Detailed Feedback | Thread ID | Raw Body`
+   `Date | Company | Sender Name | Sender Email | Status | Reject Text | Ghost Sent | Detailed Feedback | Thread ID | Stage | Raw Body`
    > *Renamed a column to your own wording? It stays — `ensureHeader()` only writes cells that are empty.*
 3. Copy the **Spreadsheet ID** from the address bar. 
    > *Example: If the URL is `docs.google.com/spreadsheets/d/1ABC_123/edit`, the ID is `1ABC_123`.*
@@ -95,7 +95,10 @@ All of these live at the top of `Config.gs`.
 
 `https://mail.google.com/` is full mailbox access — there is no narrower scope that can delete permanently (`gmail.modify` only reaches the Trash). After installing or updating the script you **must run `main` manually once** and approve the new permissions, otherwise the time trigger fails with “authorization required”.
 
-Because the mail is unrecoverable afterwards, the row is written **before** the thread is destroyed, and column **J (Raw Body)** keeps the original text (up to 5000 characters) — column F only holds the AI's cleaned-up version.
+Because the mail is unrecoverable afterwards, the row is written **before** the thread is destroyed, and column **K (Raw Body)** keeps the original text (up to 5000 characters) — column F only holds the AI's cleaned-up version.
+
+### 📊 Column J: how far you got
+The same AI call also extracts the stage the process reached before the "no", because rejection emails almost always say it — *"after reviewing your application"* vs *"following your interview with the hiring manager"*. One of `APPLICATION`, `SCREENING`, `HIRING_MANAGER`, `INTERVIEW`, `FINAL`, `UNKNOWN`; anything the model invents is normalised to `UNKNOWN` so the stats stay countable. This turns "how far do I usually get?" into a number you can read without reading a single rejection.
 
 ---
 
@@ -118,7 +121,7 @@ Follow these steps to ensure everything is connected.
 4. **Result:**
    - Your Sheet gets a row: **Company** `Casterly Rock Inc.`, **Sender Name** `Tyrion Lannister`, **Status** `REJECTED`, **Ghost Sent** `DISABLED`.
    - Your **Sent** folder stays empty — no auto-reply goes out while `ENABLE_GHOST_REPLY` is `false`.
-   - Column **J** holds the raw email text.
+   - Column **J** holds the stage (`APPLICATION` for a CV-stage rejection), column **K** the raw email text.
    - The thread is **gone** — not in the Inbox, not in the Trash, not in All Mail. You never saw it.
 
 ### Phase 2: The Noreply Sender

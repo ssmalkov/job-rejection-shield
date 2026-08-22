@@ -67,8 +67,12 @@ const GHOST_STATUS = {
 // gains column J. Headers you renamed yourself are never overwritten.
 const SHEET_HEADER = [
   'Date', 'Company', 'Sender Name', 'Sender Email', 'Status',
-  'Reject Text', 'Ghost Sent', 'Detailed Feedback', 'Thread ID', 'Raw Body'
+  'Reject Text', 'Ghost Sent', 'Detailed Feedback', 'Thread ID', 'Stage', 'Raw Body'
 ];
+
+// Column J: how far the process got before the "no". Extracted by the model
+// from the rejection text itself — the stage is almost always stated there.
+const STAGE_VALUES = ['APPLICATION', 'SCREENING', 'HIRING_MANAGER', 'INTERVIEW', 'FINAL', 'UNKNOWN'];
 
 // How much of the raw email body is preserved in column J. The thread itself is
 // gone after a permanent delete, so this is the only copy of the original text.
