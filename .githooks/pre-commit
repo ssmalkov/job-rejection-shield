@@ -1,0 +1,17 @@
+#!/bin/sh
+# Blocks obvious secrets and personal identifiers from entering the history.
+# Enable once:  git config core.hooksPath .githooks
+# Bypass when you are sure:  git commit --no-verify
+
+PATTERNS='docs\.google\.com/spreadsheets/d/[A-Za-z0-9_-]{25,}|script\.google\.com/d/[A-Za-z0-9_-]{25,}|AIza[0-9A-Za-z_-]{20,}|ya29\.[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY|[A-Za-z0-9._%+-]+@(gmail|yandex|outlook|icloud|proton(mail)?)\.[a-z]{2,}'
+
+hits=$(git diff --cached -U0 | grep -E '^\+' | grep -nEo "$PATTERNS")
+
+if [ -n "$hits" ]; then
+  echo "pre-commit: refusing to commit — looks like a real identifier or secret:"
+  echo "$hits" | sed 's/^/  /'
+  echo
+  echo "Use a placeholder, or put the value in Apps Script Script Properties."
+  echo "If this is a false positive: git commit --no-verify"
+  exit 1
+fi

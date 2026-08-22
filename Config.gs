@@ -20,6 +20,26 @@ const TARGET_LABEL = 'Job Rejection Shield';
 // nobody on the other side to answer.
 const ENABLE_GHOST_REPLY = false;
 
+// Delete rejection threads permanently instead of moving them to Trash.
+// The Trash is still a place a hand can wander into. Requires the advanced
+// Gmail service and the https://mail.google.com/ scope (see appsscript.json).
+// IRREVERSIBLE: the mail cannot be recovered from Trash or All Mail afterwards,
+// which is why raw text is stored in column J before the thread is destroyed.
+const PERMANENT_DELETE = true;
+
+// Signals that a thread is part of a live conversation. Even a REJECT verdict
+// never triggers a permanent delete when one of these is present — insurance
+// against a misclassification (or a prompt injection) eating an invitation.
+const KEEP_ALIVE_PATTERNS = [
+  /meet\.google\.com/i,
+  /zoom\.us/i,
+  /teams\.microsoft\.com/i,
+  /calendar\.google\.com/i,
+  /\binterview\b/i,
+  /schedule a call/i,
+  /\bcalendly\b/i
+];
+
 // Harvesting recruiter answers to those requests into the sheet.
 // Kept as a separate flag on purpose: it can be switched on alone to collect
 // replies to requests that were sent while ENABLE_GHOST_REPLY was still true.
@@ -40,6 +60,11 @@ const GHOST_STATUS = {
   NO_REPLY_ADDRESS: 'NO_REPLY_ADDRESS',// sender cannot receive replies
   NOT_APPLICABLE: 'N/A'                // row is not a rejection
 };
+
+// === SHEET ===
+// How much of the raw email body is preserved in column J. The thread itself is
+// gone after a permanent delete, so this is the only copy of the original text.
+const RAW_BODY_LIMIT = 5000;
 
 // === AI MODELS ===
 // Priority list: the first model that answers wins.

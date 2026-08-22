@@ -33,6 +33,7 @@ function processIncomingFeedback() {
   threads.forEach(thread => {
     const lastMessage = thread.getMessages().pop();
     const body = lastMessage.getPlainBody();
+    const subject = lastMessage.getSubject();
     const threadId = thread.getId();
 
     // Simple prompt for feedback extraction
@@ -43,8 +44,9 @@ function processIncomingFeedback() {
       const text = feedback.cleanedBody || (typeof feedback === 'string' ? feedback : JSON.stringify(feedback));
       for (let i = 1; i < data.length; i++) {
         if (data[i][8] === threadId) {
-          sheet.getRange(i + 1, 8).setValue(text);
-          thread.moveToTrash();
+          // sanitizeCell: the recruiter wrote this text, Sheets must not run it
+          sheet.getRange(i + 1, 8).setValue(sanitizeCell(text));
+          destroyThread(thread, subject, body);
           break;
         }
       }

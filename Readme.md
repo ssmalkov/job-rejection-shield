@@ -10,8 +10,8 @@ Job hunting is a numbers game, but the emotional toll is real. Reading the same 
 
 ## 🛠️ Step 1: Prepare the CRM (Google Sheets)
 1. Create a **new Google Sheet**.
-2. Set the header row (A1 to I1) with these exact columns:
-   `Date | Company | Sender Name | Sender Email | Status | Reject Text | Ghost Sent | Detailed Feedback | Thread ID`
+2. Set the header row (A1 to J1) with these exact columns:
+   `Date | Company | Sender Name | Sender Email | Status | Reject Text | Ghost Sent | Detailed Feedback | Thread ID | Raw Body`
 3. Copy the **Spreadsheet ID** from the address bar. 
    > *Example: If the URL is `docs.google.com/spreadsheets/d/1ABC_123/edit`, the ID is `1ABC_123`.*
 
@@ -70,6 +70,8 @@ All of these live at the top of `Config.gs`.
 | `ENABLE_GHOST_REPLY` | `false` | Auto-replies to a rejection asking for feedback. Off by default: in practice most rejections arrive from `noreply@` addresses, so there is nobody to answer. |
 | `ENABLE_FEEDBACK_HARVEST` | `false` | Scans recruiter answers to those requests and writes them into the sheet. Separate flag on purpose — switch it on alone to collect replies to requests you sent earlier. |
 | `NOREPLY_PATTERNS` | `noreply`, `do-not-reply` | Sender addresses that can never receive a reply. Add your own patterns here. |
+| `PERMANENT_DELETE` | `true` | Deletes rejections outright instead of moving them to Trash — because the Trash is still a place a hand can wander into. **Irreversible.** Set to `false` to go back to the Trash. |
+| `KEEP_ALIVE_PATTERNS` | Meet / Zoom / Teams / Calendly / “interview” | Safety net: a thread carrying any of these signals is never deleted permanently, even if the AI called it a rejection. It goes to the Trash instead. |
 
 **Rejections are always logged**, whatever the flags say — the CRM is the point, the reply is optional. Column **G (Ghost Sent)** records what happened:
 
@@ -79,6 +81,20 @@ All of these live at the top of `Config.gs`.
 | `DISABLED` | `ENABLE_GHOST_REPLY` is off |
 | `NO_REPLY_ADDRESS` | Sender cannot receive replies |
 | `N/A` | Row is not a rejection (e.g. `APPLIED`) |
+
+### ⚠️ Permanent deletion needs extra permissions
+`PERMANENT_DELETE` uses the advanced Gmail service (`Gmail.Users.Threads.remove`), which `appsscript.json` already declares:
+
+```json
+"dependencies": { "enabledAdvancedServices": [
+  { "userSymbol": "Gmail", "serviceId": "gmail", "version": "v1" }
+]},
+"oauthScopes": ["https://mail.google.com/", ...]
+```
+
+`https://mail.google.com/` is full mailbox access — there is no narrower scope that can delete permanently (`gmail.modify` only reaches the Trash). After installing or updating the script you **must run `main` manually once** and approve the new permissions, otherwise the time trigger fails with “authorization required”.
+
+Because the mail is unrecoverable afterwards, the row is written **before** the thread is destroyed, and column **J (Raw Body)** keeps the original text (up to 5000 characters) — column F only holds the AI's cleaned-up version.
 
 ---
 
@@ -101,14 +117,20 @@ Follow these steps to ensure everything is connected.
 4. **Result:**
    - Your Sheet gets a row: **Company** `Casterly Rock Inc.`, **Sender Name** `Tyrion Lannister`, **Status** `REJECTED`, **Ghost Sent** `DISABLED`.
    - Your **Sent** folder stays empty — no auto-reply goes out while `ENABLE_GHOST_REPLY` is `false`.
-   - The thread is in the Trash. You never saw it.
+   - Column **J** holds the raw email text.
+   - The thread is **gone** — not in the Inbox, not in the Trash, not in All Mail. You never saw it.
 
 ### Phase 2: The Noreply Sender
 1. Repeat Phase 1, but send from an address containing `noreply` (or temporarily add your test address to `NOREPLY_PATTERNS`).
 2. Run `main` again.
 3. **Result:** the row is logged exactly as above, but **Ghost Sent** reads `NO_REPLY_ADDRESS` — the shield knows there was nobody to write back to.
 
-### Phase 3: The Win
+### Phase 3: The Safety Net
+1. Send yourself another rejection, but put a link like `https://meet.google.com/abc-defg-hij` in the body.
+2. Run `main`.
+3. **Result:** the row is logged as usual, but the thread lands in the **Trash** instead of being destroyed, and the log says `LIVE-CONVERSATION SIGNAL`. Anything that smells like a live conversation survives a misclassification.
+
+### Phase 4: The Win
 1. Send yourself an interview invitation (“Could you do a call on Thursday?”) and label it `Job Rejection Shield`.
 2. Run `main`.
 3. **Result:** the email is pushed **back to your Inbox**, the label is removed, and nothing is written to the Sheet. Good news always reaches you.
@@ -162,7 +184,6 @@ This project is **Open Source** and open for improvements. If you have ideas (No
 ### Liked the Idea?
 * ⭐ **[Star this repository](https://github.com/ssmalkov/JobShield)** — to help others find it.
 * 🚀 **[Check my other projects](https://linktr.ee/ssmalkov)** — I build tools for productivity and PMs.
-* 🍺 **[Buy me a beer / Tip](https://linktr.ee/ssmalkov)** — keep the updates coming!
 
 ---
 **Safe hunting! May your next status be `OFFER`.**
