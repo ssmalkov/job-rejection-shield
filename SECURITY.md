@@ -41,16 +41,21 @@ git config core.hooksPath .githooks
 
 Hooks are local git config — they do not travel with a clone, so run that command after cloning.
 
-### Turn on GitHub's own scanning
+### GitHub's own scanning
 
-Free for public repositories, and it catches what a local hook cannot (anything pushed from another machine):
+Your local hook cannot see a push from another machine, and it does not travel with a clone. GitHub's scanning does both.
 
-1. Open your repository → **Settings**.
-2. In the left sidebar, **Code security** (older layouts: *Code security and analysis*).
-3. **Secret scanning** → **Enable**. GitHub then scans the repo's whole history and every future push for known credential formats, and alerts you.
-4. **Push protection** → **Enable**. This one is the important half: it *blocks* a push that contains a recognised secret, instead of telling you afterwards.
+Open the repository's **Security and quality** tab (older layouts put this under *Settings → Code security*). The **Overview** page lists what is on:
 
-Both are free on public repos. On private repos they are part of a paid tier, so a private fork will not have them — the local hook is your fallback there.
+- **Secret scanning alerts** — on by default for public repositories these days. It scans the whole history and every future push for known credential formats and alerts you. Nothing to do if it already says *Enabled*.
+- **Push protection** — the half that matters: it *blocks* a push containing a recognised secret instead of reporting it afterwards. Find it under **Secret scanning** in the left sidebar if it is not on the Overview page.
+- **Private vulnerability reporting** — worth enabling. It gives people a private channel to report a security problem, instead of describing it in a public issue before you have fixed it.
+- **Dependabot alerts** — pointless here. This project has no dependencies at all: no `package.json`, no `node_modules`, just three Apps Script files.
+- **Code scanning (CodeQL)** — also skippable. It handles JavaScript, but it does not recognise the `.gs` extension as JavaScript, so out of the box it would scan nothing.
+
+Adding this `SECURITY.md` file is what flips **Security policy** to *Enabled* — GitHub picks it up on its own.
+
+On private repositories secret scanning and push protection belong to a paid tier, so a private fork will not have them. There the local hook is your only guard.
 
 ## If a secret does get committed
 

@@ -182,4 +182,4 @@ Turn on the commit guard once per clone:
 git config core.hooksPath .githooks
 ```
 
-It refuses commits containing spreadsheet IDs, script IDs, API keys or personal email addresses. See [SECURITY.md](SECURITY.md) for the rest of the hygiene rules, and [CLAUDE.md](CLAUDE.md) for the conventions an AI assistant should follow here.
+It refuses commits containing spreadsheet IDs, script IDs, API keys or personal email addresses. Hooks are local config, so run that once per clone. See [SECURITY.md](SECURITY.md) for the rest of the hygiene rules, including which of GitHub's own scanners are worth turning on for a project with no dependencies, and [CLAUDE.md](CLAUDE.md) for the conventions an AI assistant should follow here.
