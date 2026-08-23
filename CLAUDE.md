@@ -51,4 +51,4 @@ Pure functions (`sanitizeCell`, `looksLikeInvitation`, `normalizeStage`, `isNoRe
 
 ## Documentation
 
-`Readme.md` is for users, `Project.md` is the technical passport, `JRS PRD.md` is the original April 2026 brief kept as history — do not update it as if it were current docs. When behaviour changes, update the README's flag table and the column schema in the same commit.
+`Readme.md` is the browser-based install for users, `SETUP.md` is the clone-and-deploy path, `SECURITY.md` covers scopes and secret hygiene, `Project.md` is the technical passport, `.claude/skills/setup-shield/SKILL.md` is the setup playbook for assistants, `JRS PRD.md` is the original April 2026 brief kept as history — do not update it as if it were current docs. When behaviour changes, update the README's flag table and the column schema in the same commit.
