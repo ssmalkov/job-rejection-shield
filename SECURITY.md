@@ -48,7 +48,9 @@ Your local hook cannot see a push from another machine, and it does not travel w
 Open the repository's **Security and quality** tab (older layouts put this under *Settings → Code security*). The **Overview** page lists what is on:
 
 - **Secret scanning alerts** — on by default for public repositories these days. It scans the whole history and every future push for known credential formats and alerts you. Nothing to do if it already says *Enabled*.
-- **Push protection** — the half that matters: it *blocks* a push containing a recognised secret instead of reporting it afterwards. Find it under **Secret scanning** in the left sidebar if it is not on the Overview page.
+- **Push protection** — the half that matters: it *blocks* a push containing a recognised secret instead of reporting it afterwards. It lives at the bottom of the **Advanced Security** settings page, under *Secret Protection*, and is on by default for public repositories.
+
+> Read those toggles carefully: a red **Disable** button means the feature is currently **on** and the button turns it off. An **Enable** button means it is off.
 - **Private vulnerability reporting** — worth enabling. It gives people a private channel to report a security problem, instead of describing it in a public issue before you have fixed it.
 - **Dependabot alerts** — pointless here. This project has no dependencies at all: no `package.json`, no `node_modules`, just three Apps Script files.
 - **Code scanning (CodeQL)** — also skippable. It handles JavaScript, but it does not recognise the `.gs` extension as JavaScript, so out of the box it would scan nothing.
