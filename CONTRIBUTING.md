@@ -1,4 +1,4 @@
-# Contributing to JobShield
+# Contributing to Job Rejection Shield
 
 We love your input! We want to make contributing to Job Rejection Shield as easy and transparent as possible.
 

@@ -211,7 +211,7 @@ Hi, I'm **Sergei Smalkov**, a Product Manager who believes that even "No's" can 
 This project is **Open Source** and open for improvements. If you have ideas (Notion integration, Telegram alerts?), feel free to contribute!
 
 ### Liked the Idea?
-* ⭐ **[Star this repository](https://github.com/ssmalkov/JobShield)** — to help others find it.
+* ⭐ **[Star this repository](https://github.com/ssmalkov/job-rejection-shield)** — to help others find it.
 * 🚀 **[Check my other projects](https://linktr.ee/ssmalkov)** — I build tools for productivity and PMs.
 
 ---
