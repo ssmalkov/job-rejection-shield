@@ -1,7 +1,7 @@
 # Project Passport: Job Rejection Shield (JRS)
 
 ## Overview
-A recruitment intelligence agent built on Google Apps Script and Gemini AI. It automates the "sad" part of job hunting: rejections are classified, logged into a CRM and trashed before the user ever sees them, while interview invitations are pushed back to the Inbox untouched.
+A recruitment intelligence agent built on Google Apps Script and Gemini AI. It automates the "sad" part of job hunting: rejections are classified, logged into a CRM and permanently deleted before the user ever sees them, while interview invitations are pushed back to the Inbox untouched.
 
 ## Tech Stack
 - **Language:** Google Apps Script (JavaScript, V8 runtime)
@@ -13,10 +13,11 @@ A recruitment intelligence agent built on Google Apps Script and Gemini AI. It a
 ## File Structure
 | File | Role |
 | --- | --- |
-| `Config.gs` | Script Properties, feature flags, noreply patterns, model priority list |
-| `Code.gs` | Orchestrator: `main()`, AI call with retries, noreply detection, sheet logging |
+| `Config.gs` | Script Properties, feature flags, noreply and keep-alive patterns, sheet header, model priority list |
+| `Code.gs` | Orchestrator: `main()`, AI call with retries, noreply detection, `destroyThread()`, sheet logging |
 | `GhostReply.gs` | Optional feedback loop: `sendGhostReply()`, `processIncomingFeedback()` |
-| `appsscript.json` | Apps Script manifest (pulled from prod) |
+| `appsscript.json` | Manifest: advanced Gmail service + OAuth scopes |
+| `.githooks/pre-commit` | Blocks real IDs, keys and personal addresses from being committed |
 
 ## Core Logic
 1. **Orchestrator:** `main()` monitors the `Job Rejection Shield` Gmail label; a time trigger runs it every 30 minutes.
@@ -36,7 +37,7 @@ A recruitment intelligence agent built on Google Apps Script and Gemini AI. It a
 ## Data Schema (11 Columns)
 1. Date | 2. Company | 3. Sender Name | 4. Sender Email | 5. Status | 6. Reject Text | 7. Ghost Sent | 8. Detailed Feedback | 9. Thread ID | 10. Stage | 11. Raw Body
 
-`ensureHeader()` writes any missing header cell on every run, so a fresh spreadsheet needs no manual setup and an existing 9-column sheet gains column J by itself; cells you renamed are left alone.
+`ensureHeader()` writes any missing header cell on every run, so a fresh spreadsheet needs no manual setup and a sheet from an older version gains the columns it lacks; cells you renamed are left alone.
 
 Column J (Stage) is extracted by the same AI call — `APPLICATION`, `SCREENING`, `HIRING_MANAGER`, `INTERVIEW`, `FINAL` or `UNKNOWN`, normalised by `normalizeStage()` so an invented label cannot pollute the stats.
 

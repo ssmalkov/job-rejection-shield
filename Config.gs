@@ -24,7 +24,7 @@ const ENABLE_GHOST_REPLY = false;
 // The Trash is still a place a hand can wander into. Requires the advanced
 // Gmail service and the https://mail.google.com/ scope (see appsscript.json).
 // IRREVERSIBLE: the mail cannot be recovered from Trash or All Mail afterwards,
-// which is why raw text is stored in column J before the thread is destroyed.
+// which is why raw text is stored in column K before the thread is destroyed.
 const PERMANENT_DELETE = true;
 
 // Signals that a thread is part of a live conversation. Even a REJECT verdict
@@ -63,8 +63,8 @@ const GHOST_STATUS = {
 
 // === SHEET ===
 // Canonical header row. ensureHeader() writes any cell that is still empty, so
-// a fresh spreadsheet needs no manual setup and an older 9-column sheet simply
-// gains column J. Headers you renamed yourself are never overwritten.
+// a fresh spreadsheet needs no manual setup and a sheet from an older version
+// simply gains the columns it lacks. Headers you renamed are never overwritten.
 const SHEET_HEADER = [
   'Date', 'Company', 'Sender Name', 'Sender Email', 'Status',
   'Reject Text', 'Ghost Sent', 'Detailed Feedback', 'Thread ID', 'Stage', 'Raw Body'
@@ -74,7 +74,7 @@ const SHEET_HEADER = [
 // from the rejection text itself — the stage is almost always stated there.
 const STAGE_VALUES = ['APPLICATION', 'SCREENING', 'HIRING_MANAGER', 'INTERVIEW', 'FINAL', 'UNKNOWN'];
 
-// How much of the raw email body is preserved in column J. The thread itself is
+// How much of the raw email body is preserved in column K. The thread itself is
 // gone after a permanent delete, so this is the only copy of the original text.
 const RAW_BODY_LIMIT = 5000;
 
