@@ -68,4 +68,6 @@ Rewriting history is the second step, never the first.
 
 ## Reporting a problem
 
-Found a security issue in the code? Open an issue with enough detail to reproduce it. Please do not include real email content, spreadsheet IDs or API keys in the report.
+Found a security issue in the code? If **private vulnerability reporting** is enabled on this repository, use it — the **Security and quality** tab has a *Report a vulnerability* button, and the report stays private until there is a fix. Otherwise open a normal issue.
+
+Either way, please do not include real email content, spreadsheet IDs or API keys in the report.
